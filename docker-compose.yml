@@ -1,0 +1,32 @@
+services:
+  redis:
+    image: redis:7-alpine
+
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      CELERY_BROKER_URL: redis://redis:6379/0
+      SQLITE_PATH: /data/db.sqlite3
+      MEDIA_ROOT: /data/media
+    volumes:
+      - data:/data
+    depends_on:
+      - redis
+
+  worker:
+    build: .
+    command: celery -A config worker --loglevel=info
+    environment:
+      CELERY_BROKER_URL: redis://redis:6379/0
+      SQLITE_PATH: /data/db.sqlite3
+      MEDIA_ROOT: /data/media
+    volumes:
+      - data:/data
+    depends_on:
+      - redis
+      - api
+
+volumes:
+  data:
