@@ -58,7 +58,10 @@ python manage.py createsuperuser
 CELERY_TASK_ALWAYS_EAGER=true python manage.py runserver   # no Redis needed
 ```
 
-With a real worker and Redis:
+Locally the API uses SQLite. Setting `POSTGRES_DB` (plus `POSTGRES_USER`, `POSTGRES_PASSWORD`,
+`POSTGRES_HOST`, `POSTGRES_PORT`) switches it to PostgreSQL.
+
+With PostgreSQL, a real worker and Redis:
 
 ```bash
 docker compose up --build
@@ -69,10 +72,12 @@ docker compose up --build
 22 tests with pytest-django: number and date parsing, parsing text out of PDFs generated
 on the fly with reportlab, the full upload flow through the eager Celery task, review and
 reprocess, corrupt files, per-user isolation, filters, summary, vendor annotations and a
-query-count guard. CI also runs ruff and checks for missing migrations.
+query-count guard. CI runs the suite twice, on SQLite and on PostgreSQL 17, and also runs
+ruff and checks for missing migrations.
 
 ```bash
 pytest
 ```
 
-Stack: Python, Django 5.2, Django REST Framework, django-filter, Celery, Redis, pypdf, pytest.
+Stack: Python, Django 5.2, Django REST Framework, django-filter, Celery, Redis, PostgreSQL,
+pypdf, pytest.

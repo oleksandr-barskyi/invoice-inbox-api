@@ -1,4 +1,26 @@
+x-app-env: &app-env
+  CELERY_BROKER_URL: redis://redis:6379/0
+  POSTGRES_DB: invoices
+  POSTGRES_USER: invoices
+  POSTGRES_PASSWORD: invoices
+  POSTGRES_HOST: db
+  MEDIA_ROOT: /data/media
+
 services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: invoices
+      POSTGRES_USER: invoices
+      POSTGRES_PASSWORD: invoices
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U invoices -d invoices"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+
   redis:
     image: redis:7-alpine
 
@@ -6,22 +28,19 @@ services:
     build: .
     ports:
       - "8000:8000"
-    environment:
-      CELERY_BROKER_URL: redis://redis:6379/0
-      SQLITE_PATH: /data/db.sqlite3
-      MEDIA_ROOT: /data/media
+    environment: *app-env
     volumes:
       - data:/data
     depends_on:
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
 
   worker:
     build: .
     command: celery -A config worker --loglevel=info
-    environment:
-      CELERY_BROKER_URL: redis://redis:6379/0
-      SQLITE_PATH: /data/db.sqlite3
-      MEDIA_ROOT: /data/media
+    environment: *app-env
     volumes:
       - data:/data
     depends_on:
@@ -30,3 +49,4 @@ services:
 
 volumes:
   data:
+  pgdata:
